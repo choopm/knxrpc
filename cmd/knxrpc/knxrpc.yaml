@@ -1,0 +1,49 @@
+log:
+  format: json # json, text, color
+  level: trace # trace, debug, info, warn, error
+  output: stdout # stdout, stderr, <filename>
+  timeFormat: "2006-01-02T15:04:05Z07:00"
+
+knx:
+  gatewayHost: 192.168.5.11
+  gatewayPort: 3671
+  timeout: 10s
+  sendLocalAddress: false
+  useTCP: false
+
+rpc:
+  auth:
+    enabled: false
+    header: Authorization
+    scheme: Bearer
+    secretKey: CHANGEME
+
+  webserver:
+    enabled: true
+    host: 0.0.0.0
+    port: 8080
+    logRequests: true
+    swagger:
+      enabled: true
+      path: /swagger
+      rootRedirect: true
+    metrics:
+      enabled: true
+      path: /metrics
+      auth:
+        enabled: false
+        header: Authorization
+        scheme: Bearer
+        secretKey: CHANGEME
+
+# for subscribe/publish subcommands
+knxrpc:
+  host: 127.0.0.1
+  port: 8080
+  useTLS: false
+  insecureTLS: false
+  auth:
+    enabled: true
+    header: Authorization
+    scheme: Bearer
+    secretKey: CHANGEME

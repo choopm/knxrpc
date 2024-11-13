@@ -1,0 +1,301 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "KNX GroupAddressService",
+    "version": "0.1",
+    "contact": {
+      "name": "Christoph Hoopmann",
+      "url": "https://github.com/choopm/knxrpc/",
+      "email": "choopm@0pointer.org"
+    },
+    "license": {
+      "name": "Apache-2.0"
+    }
+  },
+  "tags": [
+    {
+      "name": "GroupAddressService"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/knx.groupaddress.v1.GroupAddressService/Publish": {
+      "post": {
+        "summary": "Publish publishes a single message to the bus",
+        "operationId": "GroupAddressService_Publish",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PublishResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1PublishRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GroupAddressService"
+        ]
+      }
+    },
+    "/knx.groupaddress.v1.GroupAddressService/Subscribe": {
+      "post": {
+        "summary": "Subscribe watches the KNX bus for messages targeting group address(es).\nBus messages are delivered as streamed responses. It is up to you to react\non a message or ignore it.",
+        "operationId": "GroupAddressService_Subscribe",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1SubscribeResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1SubscribeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SubscribeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GroupAddressService"
+        ]
+      }
+    },
+    "/knx.groupaddress.v1.GroupAddressService/SubscribeUnary": {
+      "post": {
+        "summary": "SubscribeUnary watches the KNX bus for messages targeting group address(es).\nBus messages are delivered as an array of wrapped streamed responses.\nIt is up to you to react on a message or ignore it.",
+        "operationId": "GroupAddressService_SubscribeUnary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SubscribeUnaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SubscribeUnaryRequest"
+            }
+          }
+        ],
+        "tags": [
+          "GroupAddressService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Event": {
+      "type": "string",
+      "enum": [
+        "EVENT_UNSPECIFIED",
+        "EVENT_READ",
+        "EVENT_RESPONSE",
+        "EVENT_WRITE"
+      ],
+      "default": "EVENT_UNSPECIFIED"
+    },
+    "v1PublishRequest": {
+      "type": "object",
+      "example": {
+        "group_address": "1/2/3",
+        "physical_address": "0.0.0",
+        "event": "EVENT_WRITE",
+        "data": "AQo="
+      },
+      "properties": {
+        "groupAddress": {
+          "type": "string",
+          "title": "group_address to target the message to, required\nvalid format: 1/2/3"
+        },
+        "physicalAddress": {
+          "type": "string",
+          "title": "physical_address to be used when writing to the bus, optional\nvalid format: 1.2.3"
+        },
+        "event": {
+          "$ref": "#/definitions/v1Event",
+          "title": "type of bus message, optional (defaults to EVENT_WRITE)"
+        },
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "title": "actual data to write to the bus, required for EVENT_WRITE"
+        }
+      },
+      "required": [
+        "groupAddress"
+      ]
+    },
+    "v1PublishResponse": {
+      "type": "object"
+    },
+    "v1SubscribeRequest": {
+      "type": "object",
+      "example": {
+        "group_addresses": [
+          "1/2/3",
+          "4/5/6"
+        ],
+        "event": "EVENT_UNSPECIFIED"
+      },
+      "properties": {
+        "groupAddresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "group_addresses to subscribe to, optional (defaults to any group_adresses)\nvalid format: 1/2/3"
+        },
+        "event": {
+          "$ref": "#/definitions/v1Event",
+          "title": "events to subscribe to, optional (defaults to EVENT_UNSPECIFIED meaning any)"
+        }
+      }
+    },
+    "v1SubscribeResponse": {
+      "type": "object",
+      "properties": {
+        "groupAddress": {
+          "type": "string"
+        },
+        "physicalAddress": {
+          "type": "string"
+        },
+        "event": {
+          "$ref": "#/definitions/v1Event"
+        },
+        "data": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "v1SubscribeUnaryRequest": {
+      "type": "object",
+      "example": {
+        "subscribe_request": {
+          "group_address": "1/2/3",
+          "physical_address": "0.0.0",
+          "event": "EVENT_WRITE",
+          "data": "AQo="
+        },
+        "for": "10s"
+      },
+      "properties": {
+        "subscribeRequest": {
+          "$ref": "#/definitions/v1SubscribeRequest",
+          "title": "wrapped SubscribeRequest"
+        },
+        "for": {
+          "type": "string",
+          "title": "suscribe for this duration string, optional (if missing, will wait and return the first message)"
+        }
+      }
+    },
+    "v1SubscribeUnaryResponse": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SubscribeResponse"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "ApiKeyAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+package knx.groupaddress.v1;
+
+import "google/api/visibility.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/choopm/knxrpc/knx/groupaddress/v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "KNX GroupAddressService";
+    version: "0.1";
+    contact: {
+      name: "Christoph Hoopmann";
+      url: "https://github.com/choopm/knxrpc/";
+      email: "choopm@0pointer.org";
+    };
+    license: {
+      name: "Apache-2.0";
+    };
+  };
+  schemes: [HTTP, HTTPS];
+  consumes: "application/json";
+  produces: "application/json";
+  security_definitions: {
+		security: {
+			key: "ApiKeyAuth";
+			value: {
+				type: TYPE_API_KEY;
+				in: IN_HEADER;
+        name: "Authorization";
+			};
+		};
+	};
+  security: {
+    security_requirement: {
+      key: "ApiKeyAuth";
+      value: {}
+    };
+  };
+};
+
+service GroupAddressService {
+  option (google.api.api_visibility).restriction = "RELEASED";
+
+  // Publish publishes a single message to the bus
+  rpc Publish(PublishRequest) returns (PublishResponse) {}
+
+  // Subscribe watches the KNX bus for messages targeting group address(es).
+  // Bus messages are delivered as streamed responses. It is up to you to react
+  // on a message or ignore it.
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse) {}
+
+  // SubscribeUnary watches the KNX bus for messages targeting group address(es).
+  // Bus messages are delivered as an array of wrapped streamed responses.
+  // It is up to you to react on a message or ignore it.
+  rpc SubscribeUnary(SubscribeUnaryRequest) returns (SubscribeUnaryResponse) {
+    option (google.api.method_visibility).restriction = "BETA";
+  }
+}
+
+enum Event {
+  EVENT_UNSPECIFIED = 0;
+  EVENT_READ = 1;
+  EVENT_RESPONSE = 2;
+  EVENT_WRITE = 3;
+}
+
+message PublishRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    example: "{ \"group_address\": \"1/2/3\", \"physical_address\": \"0.0.0\", \"event\": \"EVENT_WRITE\", \"data\": \"AQo=\" }"
+  };
+
+  // group_address to target the message to, required
+  // valid format: 1/2/3
+  string group_address = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // physical_address to be used when writing to the bus, optional
+  // valid format: 1.2.3
+  string physical_address = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // type of bus message, optional (defaults to EVENT_WRITE)
+  Event event = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // actual data to write to the bus, required for EVENT_WRITE
+  bytes data = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message PublishResponse {
+}
+
+message SubscribeRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    example: "{ \"group_addresses\": [\"1/2/3\", \"4/5/6\"], \"event\": \"EVENT_UNSPECIFIED\" }"
+  };
+
+  // group_addresses to subscribe to, optional (defaults to any group_adresses)
+  // valid format: 1/2/3
+  repeated string group_addresses = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // events to subscribe to, optional (defaults to EVENT_UNSPECIFIED meaning any)
+  Event event = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message SubscribeResponse {
+  string group_address = 1;
+  string physical_address = 2;
+  Event event = 3;
+  bytes data = 4;
+}
+
+message SubscribeUnaryRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    example: "{\"subscribe_request\": { \"group_address\": \"1/2/3\", \"physical_address\": \"0.0.0\", \"event\": \"EVENT_WRITE\", \"data\": \"AQo=\" }, \"for\": \"10s\"}"
+  };
+
+  // wrapped SubscribeRequest
+  SubscribeRequest subscribe_request = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // suscribe for this duration string, optional (if missing, will wait and return the first message)
+  string for = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message SubscribeUnaryResponse {
+  repeated SubscribeResponse messages = 1;
+}

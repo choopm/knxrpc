@@ -1,0 +1,101 @@
+version: '3'
+
+set: [pipefail] # exit if any pipe component fails
+shopt: [globstar] # support double star glob paths: **/*.go
+
+# include env vars
+dotenv: ['.env']
+
+# include other taskfiles
+includes:
+  knxrpc:
+    taskfile: ./cmd/knxrpc/Taskfile.yml
+    dir: ./cmd/knxrpc
+
+tasks:
+  # building
+  build:
+    desc: Builds everything
+    cmds:
+      - task: knxrpc:build
+      # - task: knxrpc:completion
+
+  # build container image
+  image:
+    desc: Builds container images for current os/arch
+    cmds:
+      - earthly --secret github_token="" +release-local
+
+  # cleaning
+  clean:
+    desc: Removes any files created by tasks
+    cmds:
+      - task: knxrpc:clean
+      - rm -rf build
+
+  # run
+  run-knxrpc:
+    desc: Runs knxrpc
+    aliases: [run]
+    cmds:
+      - go run ./cmd/knxrpc/ -c . server
+
+  ## upgrade dependencies
+  upgrade:
+    desc: Upgrades golang+buf dependencies
+    cmds:
+      - buf dep update
+      - go get -u ./...
+      - go mod tidy
+
+  ## generate code
+  generate:
+    desc: Compiles proto files using buf
+    cmds:
+      - buf generate
+
+  # static tests
+
+  ## unit testing
+  test:
+    desc: Unit testing of go code
+    cmds:
+      - go test -race -cover ./...
+
+  ## code linting
+  lint:
+    desc: Lints golang
+    cmds:
+      - golangci-lint version || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - golangci-lint run ./...
+      - buf lint
+
+  # CI tests
+
+  ## unit testing with coverage
+  cover:
+    desc: "CI: runs golang unit and coverage testing"
+    cmds:
+      - go test -race -coverprofile=/tmp/coverage.out ./...
+      - go tool cover -html=/tmp/coverage.out -o /tmp/coverage.html
+      - go tool cover -func=/tmp/coverage.out | tee /tmp/coverage.txt
+
+  ## update licenses
+  licenses:
+    desc: Generates license tree
+    cmds:
+      - go-licenses --help 2>/dev/null || GOOS="" GOARCH="" go install github.com/google/go-licenses@latest
+      - rm -rf LICENSES
+      - go-licenses save --save_path LICENSES ./...
+      - go-licenses report ./... > LICENSES/LICENSES.CSV
+
+  # setups your environment
+  envsetup:
+    desc: "Setups your environment, run on post-attach"
+    deps: [gomoddownload]
+  ## runs go mod download
+  gomoddownload:
+    internal: true
+    cmds:
+      - cmd: go mod download
+        ignore_error: true
