@@ -18,6 +18,8 @@ You can find the protobuf-spec in [groupaddressservice.proto](knx/groupaddress/v
 
 You can access Swagger UI (if enabled via config) via: <http://localhost:8080/swagger>.
 
+![Swagger UI](swaggerui.png)
+
 ### knxrpc API client using golang
 
 You can use the generated golang code and helper funcs to build your own API client.
